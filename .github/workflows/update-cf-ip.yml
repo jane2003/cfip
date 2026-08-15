@@ -1,0 +1,35 @@
+name: update-cf-ip
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'   # 每周日 00:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 拉取 CF 官方 IP 段
+        run: |
+          curl -sS https://api.cloudflare.com/client/v4/ips -o /tmp/ips.json
+          python3 - <<'PY'
+          import json
+          d = json.load(open('/tmp/ips.json'))['result']
+          open('ip.txt','w').write('\n'.join(d['ipv4_cidrs']) + '\n')
+          open('ipv6.txt','w').write('\n'.join(d['ipv6_cidrs']) + '\n')
+          print('ipv4:', len(d['ipv4_cidrs']), 'ipv6:', len(d['ipv6_cidrs']))
+          PY
+
+      - name: 有变更则提交
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          if git diff --quiet; then
+            echo "无变更，跳过"
+            exit 0
+          fi
+          git add ip.txt ipv6.txt
+          git commit -m "chore: 更新 CF 官方 IP 段 $(date +%F)"
+          git push
