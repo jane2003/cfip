@@ -48,7 +48,7 @@ CF_TG_ID="..."
 | CF_DN_COUNT | 10 | 每 IP 下载测速次数 |
 | CF_TL | 300 | 延迟上限 ms |
 | CF_IPV | 4 | 4=IPv4 6=IPv6 |
-| CF_SPEED_URL | cdnjs 官方地址 | 测速下载地址，国内可达 |
+| CF_SPEED_URL | cdnjs three.js（603KB）| 测速下载地址，国内可达，文件须够大 |
 
 ## 注意
 

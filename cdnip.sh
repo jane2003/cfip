@@ -30,7 +30,7 @@ R='\033[31m' G='\033[32m' Y='\033[33m' C='\033[36m' W='\033[0m'
 : ${CF_DOMAIN:="zbs969.dpdns.org"} ${CF_COUNT:="10"}
 : ${CF_THREADS:="200"} ${CF_DN_COUNT:="10"} ${CF_DN_TIME:="3"} ${CF_TL:="300"}
 : ${CF_IPV:="4"}
-: ${CF_SPEED_URL:="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"}
+: ${CF_SPEED_URL:="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"}
 : ${CF_TG_TOKEN:=""} ${CF_TG_ID:=""}
 
 # ── 日志 / TG ──
@@ -58,17 +58,19 @@ fetch_cfst() {
         curl -sSLm 60 "$u" -o "$T" && [ -s "$T" ] && break
     done
     [ -s "$T" ] || { log "cfst 下载失败"; exit 1; }
-    tar -xzf "$T" -C "$WD" CloudflareST 2>/dev/null || tar -xzf "$T" -C "$WD" 2>/dev/null
-    [ -f "$WD/CloudflareST" ] && mv -f "$WD/CloudflareST" "$CFST"
-    chmod +x "$CFST"
+    tar -xzf "$T" -C "$WD" 2>/dev/null
+    BIN=$(find "$WD" -maxdepth 2 \( -name 'cfst' -o -name 'CloudflareST' \) -type f 2>/dev/null | head -1)
+    [ -n "$BIN" ] && mv -f "$BIN" "$CFST"
+    chmod +x "$CFST" 2>/dev/null
     rm -f "$T"
+    find "$WD" -maxdepth 1 -type d -name 'cfst_linux_*' -exec rm -rf {} + 2>/dev/null
+    [ -x "$CFST" ] || { log "cfst 解压失败"; exit 1; }
     log "cfst 就绪"
 }
 
 # ── 下载 IP 段列表（多源）──
 fetch_iplist() {
     local TARGET="$1" SRC="$2"
-    [ -s "$TARGET" ] && return
     log "下载 IP 列表 $SRC..."
     for u in \
         "https://ghproxy.net/https://raw.githubusercontent.com/jane2003/cfip/master/$SRC" \
@@ -83,11 +85,11 @@ fetch_iplist() {
 # ── cfst 测速 ──
 run_speedtest() {
     log "开始测速（线程 ${CF_THREADS}，延迟上限 ${CF_TL}ms）..."
-    local EXTRA=""
-    [ "$CF_IPV" = "6" ] && EXTRA="-ipv6"
-    $CFST -f "$IPLIST" -o "$RESULT" -n "$CF_THREADS" -t 1 \
+    local FILE="$IPLIST"
+    [ "$CF_IPV" = "6" ] && FILE="$IPLIST6"
+    $CFST -f "$FILE" -o "$RESULT" -n "$CF_THREADS" -t 1 \
         -dn "$CF_DN_COUNT" -dt "$CF_DN_TIME" -tl "$CF_TL" -tll 0 -sl 0 \
-        -url "$CF_SPEED_URL" $EXTRA >/dev/null 2>&1 || true
+        -url "$CF_SPEED_URL" >/dev/null 2>&1 || true
     [ -s "$RESULT" ] || { log "测速失败，无结果"; exit 1; }
     log "测速完成: $(tail -n +2 "$RESULT" | wc -l) 个可用 IP"
 }
