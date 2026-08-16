@@ -5,6 +5,9 @@ on:
     - cron: '0 0 * * 0'   # 每周日 00:00 UTC
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   update:
     runs-on: ubuntu-latest
@@ -32,4 +35,4 @@ jobs:
           fi
           git add ip.txt ipv6.txt
           git commit -m "chore: 更新 CF 官方 IP 段 $(date +%F)"
-          git push
+          git push origin HEAD
